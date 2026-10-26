@@ -8,8 +8,7 @@ import requests
 import time
 import selenium
 import os
-import random
-from PIL import Image , ImageEnhance
+
 import undetected_chromedriver as uc 
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -17,79 +16,78 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
 import pandas as pd
 
-
+uc.Chrome.__del__ = lambda self: None #фикс ошибка с закрытием(первый промт в клоде)
 
 class Parcer():
 
     def __init__(self, link, klas):
         self.link = link
         self.klas = klas
-        desktop_path = os.path.join(os.environ['USERPROFILE'], 'Desktop')
-        chrome_156_path = os.path.join(desktop_path, 'Chrome156', 'chrome.exe')
-        if not os.path.exists(chrome_156_path):
-            raise FileNotFoundError(f"Не удалось найти Chrome по пути: {chrome_156_path}. Проверьте имя папки.")
+        chrome_156_path = r"D:\chrome-win64\chrome.exe"
+        
+        # if not os.path.exists(chrome_156_path): #если не существует, то выведем ошибку
+        #     raise FileNotFoundError(f"Не удалось найти Chrome по пути: {chrome_156_path}. Проверьте имя папки.")
 
-        options = uc.ChromeOptions()
+        self.options = uc.ChromeOptions()
 
-        self.driver = uc.Chrome(options=options, browser_executable_path=chrome_156_path)
+        self.driver = uc.Chrome(options=self.options, browser_executable_path=chrome_156_path)
         self.driver.get(self.link)
 
-
-        # self.driver = webdriver.Chrome()
-        # self.driver.get(self.link)
         time.sleep(10)
+
+
+
+    def accept_cookie(self):
+        click_elem = WebDriverWait(self.driver, 10).until(
+            EC.element_to_be_clickable((By.CLASS_NAME, "cookies__btn")))
+        click_elem.click()
+        time.sleep(1)
+
+    def scroll(self, times=17):
+        for _ in range(times):
+            self.driver.execute_script("window.scrollBy(0, 1000);") #на 2к пикселей вниз и так 9 шагов
+            time.sleep(1)
+
 
 
     def getlinks(self):
 
-#БЛОК ИИ
-        print("Начинаю плавный скролл страницы для подгрузки всех товаров...")
-        
-        # Задаем шаг прокрутки в пикселях и задержку между шагами
-        scroll_step = 400  
-        scroll_delay = 0.3  # секунды
-        
-        # Получаем полную высоту страницы на старте
-        last_height = self.driver.execute_script("return document.body.scrollHeight")
-        current_position = 0
-
-        while True:
-            # Скроллим на фиксированный шаг вниз
-            current_position += scroll_step
-            self.driver.execute_script(f"window.scrollTo(0, {current_position});")
-            time.sleep(scroll_delay)
-            
-            # Раз в несколько шагов проверяем, не дошли ли мы до самого конца страницы
-            if current_position % 2000 == 0:
-                new_height = self.driver.execute_script("return document.body.scrollHeight")
-                # Если мы пролистали ниже текущей высоты и она перестала расти — мы внизу
-                if current_position >= new_height:
-                    # На WB в самом низу может появиться пагинация или футер, 
-                    # делаем финальную небольшую паузу на случай ленивой загрузки последних картинок
-                    time.sleep(2)
-                    break
-#############################
-
-
-
-
-
-
-
-
-
-
-
-
+        time.sleep(3)
         elements_first_page = self.driver.find_elements(By.CLASS_NAME, self.klas)
         links_list = []
+        text_list = []
+        time.sleep(9)
+
         for element in elements_first_page:
             url = element.get_attribute('href')
+            text = element.get_attribute('aria-label')
             links_list.append(url)
-        print(links_list)
+            name = text.lower()
+            if 'superlight 2' in name:
+                text_list.append(text)
 
-    def __del__(self):
-        self.driver.quit()
+        print(links_list)
+        print(text_list)
+        print(len(links_list))
+        print(len(text_list))
+
+        for href in links_list:
+            self.driver.get(href)
+            characteristik = WebDriverWait(self.driver, 10).until(
+            EC.element_to_be_clickable((By.CLASS_NAME, "btnDetail--OZvtD")))
+            characteristik.click()
+            time.sleep(3)
+
+
+
+    def close(self): #фикс ошибка с закрытием(первый промт в клоде)
+        if self.driver:
+            try:
+                self.driver.quit()
+            except OSError:
+                pass
+            finally:
+                self.driver = None    
 
     # def agent(self):
     #     options = Options()
