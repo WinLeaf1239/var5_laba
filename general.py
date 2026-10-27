@@ -8,7 +8,7 @@ import requests
 import time
 import selenium
 import os
-
+import csv
 import undetected_chromedriver as uc 
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -52,10 +52,11 @@ class Parcer():
 
     def getlinks(self):
 
-        time.sleep(3)
+        time.sleep(2)
         elements_first_page = self.driver.find_elements(By.CLASS_NAME, self.klas)
         links_list = []
         text_list = []
+        dictik = {}
         time.sleep(9)
 
         for element in elements_first_page:
@@ -76,7 +77,28 @@ class Parcer():
             characteristik = WebDriverWait(self.driver, 10).until(
             EC.element_to_be_clickable((By.CLASS_NAME, "btnDetail--OZvtD")))
             characteristik.click()
-            time.sleep(3)
+            time.sleep(1)
+            thes = self.driver.find_elements(By.TAG_NAME, 'th')
+            tdes = self.driver.find_elements(By.TAG_NAME, 'td')
+
+            for th , td in zip(thes,tdes):
+                key = th.text
+                value = td.text
+
+                dictik[key] = value
+
+            file_ext = os.path.isfile("var.csv")
+            with open("var.csv", mode="a", encoding="utf-8", newline="") as f:
+                writer = csv.DictWriter(f, fieldnames=dictik.keys())
+
+                if not file_ext:
+                    writer.writeheader()
+
+                writer.writerow(dictik)
+
+
+            
+
 
 
 
